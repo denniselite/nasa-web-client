@@ -1,7 +1,7 @@
 <?php
 
 $params = require(__DIR__ . '/params.php');
-$db = require(__DIR__ . '/db.php');
+$mongodb = require(__DIR__ . '/mongodb.php');
 
 $config = [
     'id' => 'basic',
@@ -11,6 +11,9 @@ $config = [
         'request' => [
             // !!! insert a secret key in the following (if it is empty) - this is required by cookie validation
             'cookieValidationKey' => 'Egs-Kt-yqvJ9Go_trob1AsZgrhtca8-P',
+            'parsers' => [
+                'application/json' => 'yii\web\JsonParser',
+            ]
         ],
         'cache' => [
             'class' => 'yii\caching\FileCache',
@@ -20,7 +23,7 @@ $config = [
             'enableAutoLogin' => true,
         ],
         'errorHandler' => [
-            'errorAction' => 'site/error',
+            'errorAction' => 'app/error',
         ],
         'mailer' => [
             'class' => 'yii\swiftmailer\Mailer',
@@ -38,15 +41,17 @@ $config = [
                 ],
             ],
         ],
-        'db' => $db,
-        /*
+        'mongodb' => $mongodb,
         'urlManager' => [
             'enablePrettyUrl' => true,
+            'enableStrictParsing' => true,
             'showScriptName' => false,
             'rules' => [
+                ['class' => 'yii\rest\UrlRule', 'controller' => 'neo'],
+                '/' => 'app/index',
+                '<controller>/<action>' => '<controller>/<action>'
             ],
         ],
-        */
     ],
     'params' => $params,
 ];
