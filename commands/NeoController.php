@@ -23,53 +23,91 @@ class NeoController extends Controller
         foreach ($collections as $c) {
             $collectionAlreadyExists = ($c['name'] === 'neos');
         }
-        if (!$collectionAlreadyExists) {
-            Yii::$app->mongodb->createCommand()->createCollection('neos');
-            echo "Collection 'neos' created...\n";
+        if ($collectionAlreadyExists) {
+            Yii::$app->mongodb->getCollection('neos')->drop();
         }
+        Yii::$app->mongodb->createCommand()->createCollection('neos');
+        echo "Collection 'neos' created...\n";
     }
-    public function actionInitData()
+
+    public function actionInit3DaysData()
     {
         $this->initCollection();
         $dateTime = new \DateTime();
         $dateEnd = $dateTime->format('Y-m-d');
         $dateStart = $dateTime->sub(new \DateInterval('P3D'))->format('Y-m-d');
         printf("Date start: %s, Date end: %s\n", $dateStart, $dateEnd);
-        $response = $this->doRequest($dateStart, $dateEnd);
+        $params = [
+            'start_date' => $dateStart,
+            'end_date' => $dateEnd,
+            'detailed' => false,
+            'host' => 'https://api.nasa.gov/neo/rest/v1/feed'
+        ];
+        $response = $this->doRequest($params);
         if ($response->isOk && $this->isValidResponse($response->data)) {
-            $this->saveData($response->data);
+            $this->saveLast3DaysData($response->data);
             printf("Success!\n");
         } else {
             printf("Invalid response!\n");
         }
     }
 
+    public function actionInitAllData()
+    {
+        $this->initCollection();
+        $params = [
+            'page' => 0,
+            'size' => 20,
+            'host' => 'https://api.nasa.gov/neo/rest/v1/neo/browse'
+        ];
+        $response = $this->doRequest($params);
+        if ($response->isOk && $this->isValidResponse($response->data)) {
+            $responseData = $response->data;
+
+            printf("Receiving NEOs: %d\n", $responseData['page']['total_elements']);
+            $savedCount = $this->savePageData($responseData);
+            printf("\rNeo info saved: %d", $savedCount);
+
+            while (isset($responseData['links']) && isset($responseData['links']['next'])) {
+                $params['page'] += 1;
+                $response = $this->doRequest($params);
+
+                if ($response->isOk && $this->isValidResponse($response->data)) {
+                    $responseData = $response->data;
+                    $savedCount += $this->savePageData($responseData);
+                    printf("\rNeo info saved: %d", $savedCount);
+                } else {
+                    printf("Invalid response for page %d!\n", $params['page']);
+                    break;
+                }
+            }
+
+            printf("Completed!\n");
+        } else {
+            printf("Invalid response!\n");
+        }
+    }
+
+
     /**
-     * @param $dateStart
-     * @param $dateEnd
+     * @param []$params
      * @return Response|null
      */
-    private function doRequest($dateStart, $dateEnd)
+    private function doRequest($params)
     {
-        $apiKey = 'N7LkblDsc5aen05FJqBQ8wU4qSdmsftwJagVK7UD';
-        $host = 'https://api.nasa.gov/neo/rest/v1/feed';
+        $params['api_key'] = 'N7LkblDsc5aen05FJqBQ8wU4qSdmsftwJagVK7UD';
         $response = (new Client)
             ->createRequest()
             ->setMethod('get')
-            ->setUrl($host)
-            ->setData([
-                'start_date' => $dateStart,
-                'end_date' => $dateEnd,
-                'detailed' => false,
-                'api_key' => $apiKey
-            ])->send();
+            ->setUrl($params['host'])
+            ->setData($params)->send();
         return $response;
     }
 
     /**
      * @param [] $data
      */
-    private function saveData($data)
+    private function saveLast3DaysData($data)
     {
         printf("Received NEOs: %d\n", $data['element_count']);
         $savedCount = 0;
@@ -94,12 +132,33 @@ class NeoController extends Controller
         printf("\n");
     }
 
+    private function savePageData($data)
+    {
+        $savedCount = 0;
+        foreach ($data['near_earth_objects'] as $date => $neoInfo) {
+                foreach ($neoInfo['close_approach_data'] as $neoApproachData) {
+                    $neo = new Neo;
+                    $neo->setAttributes([
+                        'date' => $neoApproachData['close_approach_date'],
+                        'is_hazardous' => (bool)$neoInfo['is_potentially_hazardous_asteroid'],
+                        'name' => $neoInfo['name'],
+                        'reference' => $neoInfo['neo_reference_id'],
+                        'speed' => (float)$neoApproachData['relative_velocity']['kilometers_per_hour']
+                    ]);
+                    if ($neo->save(true)) {
+                        $savedCount++;
+                    }
+                }
+        }
+        return $savedCount;
+    }
+
     /**
      * @param [] $response
      * @return bool
      */
     private function isValidResponse($response)
     {
-        return isset($response['links']) && isset($response['element_count']) && isset($response['near_earth_objects']);
+        return isset($response['links']) && isset($response['near_earth_objects']);
     }
 }
