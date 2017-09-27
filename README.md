@@ -1,16 +1,5 @@
-Yii 2 Basic Project Template
-============================
-
-Yii 2 Basic Project Template is a skeleton [Yii 2](http://www.yiiframework.com/) application best for
-rapidly creating small projects.
-
-The template contains the basic features including user login/logout and a contact page.
-It includes all commonly used configurations that would allow you to focus on adding new
-features to your application.
-
-[![Latest Stable Version](https://poser.pugx.org/yiisoft/yii2-app-basic/v/stable.png)](https://packagist.org/packages/yiisoft/yii2-app-basic)
-[![Total Downloads](https://poser.pugx.org/yiisoft/yii2-app-basic/downloads.png)](https://packagist.org/packages/yiisoft/yii2-app-basic)
-[![Build Status](https://travis-ci.org/yiisoft/yii2-app-basic.svg?branch=master)](https://travis-ci.org/yiisoft/yii2-app-basic)
+Nasa NEO Parser
+===============
 
 DIRECTORY STRUCTURE
 -------------------
@@ -19,7 +8,6 @@ DIRECTORY STRUCTURE
       commands/           contains console commands (controllers)
       config/             contains application configurations
       controllers/        contains Web controller classes
-      mail/               contains view files for e-mails
       models/             contains model classes
       runtime/            contains files generated during runtime
       tests/              contains various tests for the basic application
@@ -28,17 +16,13 @@ DIRECTORY STRUCTURE
       web/                contains the entry script and Web resources
 
 
-
 REQUIREMENTS
 ------------
 
 The minimum requirement by this project template that your Web server supports PHP 5.4.0.
 
-
 INSTALLATION
 ------------
-
-### Install via Composer
 
 If you do not have [Composer](http://getcomposer.org/), you may install it by following the instructions
 at [getcomposer.org](http://getcomposer.org/doc/00-intro.md#installation-nix).
@@ -46,36 +30,10 @@ at [getcomposer.org](http://getcomposer.org/doc/00-intro.md#installation-nix).
 You can then install this project template using the following command:
 
 ~~~
-php composer.phar global require "fxp/composer-asset-plugin:^1.3.1"
-php composer.phar create-project --prefer-dist --stability=dev yiisoft/yii2-app-basic basic
-~~~
-
-Now you should be able to access the application through the following URL, assuming `basic` is the directory
-directly under the Web root.
-
-~~~
-http://localhost/basic/web/
-~~~
-
-
-### Install from an Archive File
-
-Extract the archive file downloaded from [yiiframework.com](http://www.yiiframework.com/download/) to
-a directory named `basic` that is directly under the Web root.
-
-Set cookie validation key in `config/web.php` file to some random secret string:
-
-```php
-'request' => [
-    // !!! insert a secret key in the following (if it is empty) - this is required by cookie validation
-    'cookieValidationKey' => '<secret random string goes here>',
-],
-```
-
-You can then access the application through the following URL:
-
-~~~
-http://localhost/basic/web/
+composer global require "fxp/composer-asset-plugin:^1.3.1"
+git clone https://github.com/denniselite/nasa-web-client.git
+cd nasa-web-client
+composer install
 ~~~
 
 
@@ -84,24 +42,113 @@ CONFIGURATION
 
 ### Database
 
-Edit the file `config/db.php` with real data, for example:
+Edit the file `config/mongdb.php` with real data, for example:
 
 ```php
 return [
-    'class' => 'yii\db\Connection',
-    'dsn' => 'mysql:host=localhost;dbname=yii2basic',
-    'username' => 'root',
-    'password' => '1234',
-    'charset' => 'utf8',
+    'class' => '\yii\mongodb\Connection',
+    'dsn' => 'mongodb://localhost:27017/nasa',
 ];
 ```
 
-**NOTES:**
-- Yii won't create the database for you, this has to be done manually before you can access it.
-- Check and edit the other files in the `config/` directory to customize your application as required.
-- Refer to the README in the `tests` directory for information specific to basic application tests.
+### Storage initialization
 
+After database configuration you should prepare data. The simple NASA service has 2 near earth objects sets which will be build with console commands.
 
+In the project directory execute: 
+
+1. For last 3 days `php yii neo/init3-days-data`;
+2. For all dump of NASA data storage `php yii neo/init-all-data`.
+
+Application will be process NEOs information and save it to DB.
+
+ROUTES
+------
+
+Application has the request-response structure. For undefined routes and some exceptions it will be error with description:
+
+```
+{
+    "error": {
+        "status": 404,
+        "message": "Route is not found."
+    },
+    "response": null
+}
+```
+
+For wrong parameters and unhandled exceptions it will be:
+
+```
+{
+    "name": "Bad Request",
+    "message": "The hazardous parameter should contains only true or false",
+    "code": 0,
+    "status": 400,
+    "type": "yii\\web\\BadRequestHttpException"
+}
+```
+
+### Supported routes
+
+* `/` - main route, returns simple message
+
+```
+{
+    "hello": "world!"
+}
+```
+
+* `/neo/best-month?hazardous=(true|false)` - returns the number of month with biggest count of NEOs. The `hazardous` param is configure but required.
+
+```
+{
+    "error": null,
+    "response": "10"
+}
+```
+
+* `/neo/best-year?hazardous=(true|false)` - returns the number of year with biggest count of NEOs. The `hazardous` param is configure but required.
+
+```
+{
+    "error": null,
+    "response": "2012"
+}
+```
+
+* `neo/hazardous` - returns all hazardous NEO with basic information:
+
+```
+{
+    "error": null,
+    "response": [
+        {
+            "_id": "59cb2603aaf0c3ee2f177a92",
+            "date": "1979-12-17",
+            "is_hazardous": true,
+            "name": "(1979 XB)",
+            "reference": "3012393",
+            "speed": 82895.208318495
+        },
+    ...    
+```
+
+* `/neo/fastest?hazardous=(true|false)` - returns the fastest NEO with basic information. The `hazardous` param is configure but required.
+
+```
+{
+    "error": null,
+    "response": {
+        "_id": "59cb2634aaf0c3ee2f177d80",
+        "date": "2096-06-17",
+        "is_hazardous": false,
+        "name": "(2004 LG)",
+        "reference": "3183837",
+        "speed": 340884.61071708
+    }
+}
+```
 
 TESTING
 -------
@@ -122,72 +169,6 @@ vendor/bin/codecept run
 The command above will execute unit and functional tests. Unit tests are testing the system components, while functional
 tests are for testing user interaction. Acceptance tests are disabled by default as they require additional setup since
 they perform testing in real browser. 
-
-
-### Running  acceptance tests
-
-To execute acceptance tests do the following:  
-
-1. Rename `tests/acceptance.suite.yml.example` to `tests/acceptance.suite.yml` to enable suite configuration
-
-2. Replace `codeception/base` package in `composer.json` with `codeception/codeception` to install full featured
-   version of Codeception
-
-3. Update dependencies with Composer 
-
-    ```
-    composer update  
-    ```
-
-4. Download [Selenium Server](http://www.seleniumhq.org/download/) and launch it:
-
-    ```
-    java -jar ~/selenium-server-standalone-x.xx.x.jar
-    ```
-
-    In case of using Selenium Server 3.0 with Firefox browser since v48 or Google Chrome since v53 you must download [GeckoDriver](https://github.com/mozilla/geckodriver/releases) or [ChromeDriver](https://sites.google.com/a/chromium.org/chromedriver/downloads) and launch Selenium with it:
-
-    ```
-    # for Firefox
-    java -jar -Dwebdriver.gecko.driver=~/geckodriver ~/selenium-server-standalone-3.xx.x.jar
-    
-    # for Google Chrome
-    java -jar -Dwebdriver.chrome.driver=~/chromedriver ~/selenium-server-standalone-3.xx.x.jar
-    ``` 
-    
-    As an alternative way you can use already configured Docker container with older versions of Selenium and Firefox:
-    
-    ```
-    docker run --net=host selenium/standalone-firefox:2.53.0
-    ```
-
-5. (Optional) Create `yii2_basic_tests` database and update it by applying migrations if you have them.
-
-   ```
-   tests/bin/yii migrate
-   ```
-
-   The database configuration can be found at `config/test_db.php`.
-
-
-6. Start web server:
-
-    ```
-    tests/bin/yii serve
-    ```
-
-7. Now you can run all available tests
-
-   ```
-   # run all available tests
-   vendor/bin/codecept run
-
-   # run acceptance tests
-   vendor/bin/codecept run acceptance
-
-   # run only unit and functional tests
-   vendor/bin/codecept run unit,functional
-   ```
 
 ### Code coverage support
 
