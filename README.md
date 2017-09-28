@@ -158,7 +158,6 @@ By default there are 3 test suites:
 
 - `unit`
 - `functional`
-- `acceptance`
 
 Tests can be executed by running
 

@@ -17,6 +17,7 @@ class Yii extends \yii\BaseYii
  * Class BaseApplication
  * Used for properties that are identical for both WebApplication and ConsoleApplication
  * @property yii\mongodb\Connection mongodb
+ * @property \app\components\Api $api
  */
 abstract class BaseApplication extends yii\base\Application
 {
@@ -26,6 +27,7 @@ abstract class BaseApplication extends yii\base\Application
  * Class WebApplication
  * Include only Web application related components here
  * @property yii\mongodb\Connection mongodb
+ * @property \app\components\Api $api
  */
 class WebApplication extends yii\web\Application
 {
@@ -35,6 +37,7 @@ class WebApplication extends yii\web\Application
  * Class ConsoleApplication
  * Include only Console application related components here
  * @property yii\mongodb\Connection mongodb
+ * @property \app\components\Api $api
  */
 class ConsoleApplication extends yii\console\Application
 {

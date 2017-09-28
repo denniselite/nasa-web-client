@@ -9,6 +9,11 @@ $config = [
     'bootstrap' => ['log'],
     'controllerNamespace' => 'app\commands',
     'components' => [
+        'api' => [
+            'class' => 'app\components\Api',
+            'endPoint' => 'https://api.nasa.gov/neo/rest/v1',
+            'apiKey' => 'N7LkblDsc5aen05FJqBQ8wU4qSdmsftwJagVK7UD'
+        ],
         'cache' => [
             'class' => 'yii\caching\FileCache',
         ],

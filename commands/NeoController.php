@@ -11,8 +11,6 @@ namespace app\commands;
 use app\models\Neo;
 use Yii;
 use yii\console\Controller;
-use yii\httpclient\Client;
-use yii\httpclient\Response;
 
 class NeoController extends Controller
 {
@@ -37,14 +35,9 @@ class NeoController extends Controller
         $dateEnd = $dateTime->format('Y-m-d');
         $dateStart = $dateTime->sub(new \DateInterval('P3D'))->format('Y-m-d');
         printf("Date start: %s, Date end: %s\n", $dateStart, $dateEnd);
-        $params = [
-            'start_date' => $dateStart,
-            'end_date' => $dateEnd,
-            'detailed' => false,
-            'host' => 'https://api.nasa.gov/neo/rest/v1/feed'
-        ];
-        $response = $this->doRequest($params);
-        if ($response->isOk && $this->isValidResponse($response->data)) {
+
+        $response = Yii::$app->api->getDailyNeosInfo($dateStart, $dateEnd);
+        if ($this->isValidResponse($response->data)) {
             $this->saveLast3DaysData($response->data);
             printf("Success!\n");
         } else {
@@ -55,13 +48,9 @@ class NeoController extends Controller
     public function actionInitAllData()
     {
         $this->initCollection();
-        $params = [
-            'page' => 0,
-            'size' => 20,
-            'host' => 'https://api.nasa.gov/neo/rest/v1/neo/browse'
-        ];
-        $response = $this->doRequest($params);
-        if ($response->isOk && $this->isValidResponse($response->data)) {
+        $page = 0;
+        $response = Yii::$app->api->getAllData($page);
+        if ($this->isValidResponse($response->data)) {
             $responseData = $response->data;
 
             printf("Receiving NEOs: %d\n", $responseData['page']['total_elements']);
@@ -69,15 +58,15 @@ class NeoController extends Controller
             printf("\rNeo info saved: %d", $savedCount);
 
             while (isset($responseData['links']) && isset($responseData['links']['next'])) {
-                $params['page'] += 1;
-                $response = $this->doRequest($params);
+                $page += 1;
+                $response = Yii::$app->api->getAllData($page);
 
-                if ($response->isOk && $this->isValidResponse($response->data)) {
+                if ($this->isValidResponse($response->data)) {
                     $responseData = $response->data;
                     $savedCount += $this->savePageData($responseData);
                     printf("\rNeo info saved: %d", $savedCount);
                 } else {
-                    printf("Invalid response for page %d!\n", $params['page']);
+                    printf("Invalid response for page %d!\n", $page);
                     break;
                 }
             }
@@ -86,22 +75,6 @@ class NeoController extends Controller
         } else {
             printf("Invalid response!\n");
         }
-    }
-
-
-    /**
-     * @param []$params
-     * @return Response|null
-     */
-    private function doRequest($params)
-    {
-        $params['api_key'] = 'N7LkblDsc5aen05FJqBQ8wU4qSdmsftwJagVK7UD';
-        $response = (new Client)
-            ->createRequest()
-            ->setMethod('get')
-            ->setUrl($params['host'])
-            ->setData($params)->send();
-        return $response;
     }
 
     /**
