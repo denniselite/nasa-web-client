@@ -43,6 +43,42 @@ Or you can use the docker image:
 $ docker push denniselite/nasa-php-nginx:v1
 ~~~
 
+Or via `docker-compose`: Create the docker-compose file `docker-compose.yml`:
+
+~~~
+version: '2'
+services:
+  nasa:
+    container_name: "nasa"
+    image: denniselite/nasa-php-nginx:v1
+    volumes:
+        - ./tmp:/tmp
+    ports:
+        - 8080:80
+    links:
+        - mongodb
+    depends_on:
+        - mongodb
+
+  mongodb:
+    image: mongo:latest
+    container_name: "mongodb"
+    environment:
+      - MONGO_DATA_DIR=/data/db
+      - MONGO_LOG_DIR=/dev/null
+    volumes:
+      - ./data/db:/data/db
+    ports:
+      - 27017:27017
+    command: mongod --smallfiles --logpath=/dev/null # --quiet
+~~~
+
+Then exec: 
+
+~~~
+$ docker-compose up -d
+~~~
+
 CONFIGURATION
 -------------
 
