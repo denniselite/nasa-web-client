@@ -37,6 +37,12 @@ composer install
 ~~~
 
 
+Or you can use the docker image:
+
+~~~
+$ docker push denniselite/nasa-php-nginx:v1
+~~~
+
 CONFIGURATION
 -------------
 
