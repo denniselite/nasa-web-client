@@ -8,10 +8,10 @@
 
 namespace app\components;
 
-use HttpException;
 use \yii\base\Component;
 use yii\httpclient\Client;
 use yii\httpclient\Response;
+use yii\web\ServerErrorHttpException;
 
 class Api extends Component
 {
@@ -52,7 +52,7 @@ class Api extends Component
     /**
      * @param [] $params
      * @return Response|null
-     * @throws HttpException
+     * @throws ServerErrorHttpException
      */
     private function doRequest($params)
     {
@@ -63,7 +63,7 @@ class Api extends Component
             ->setUrl($params['host'])
             ->setData($params)->send();
         if (!$response->isOk) {
-            throw new HttpException('Error to request data with params: ' . json_encode($params) . '; response' . json_encode($response->data));
+            throw new ServerErrorHttpException('Error to request data with params: ' . json_encode($params) . '; response' . json_encode($response->data));
         }
         return $response;
     }
