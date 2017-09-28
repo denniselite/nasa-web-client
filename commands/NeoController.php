@@ -69,6 +69,9 @@ class NeoController extends Controller
                     printf("Invalid response for page %d!\n", $page);
                     break;
                 }
+                if ($responseData['page']['total_pages'] === $page) {
+                    break;
+                }
             }
 
             printf("Completed!\n");

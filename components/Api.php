@@ -8,6 +8,7 @@
 
 namespace app\components;
 
+use HttpException;
 use \yii\base\Component;
 use yii\httpclient\Client;
 use yii\httpclient\Response;
@@ -49,8 +50,9 @@ class Api extends Component
         return $this->doRequest($params);
     }
     /**
-     * @param []$params
+     * @param [] $params
      * @return Response|null
+     * @throws HttpException
      */
     private function doRequest($params)
     {
